@@ -155,3 +155,21 @@ This repository contains project code and documentation only. Real hospital oper
 GitHub: https://github.com/gihad-colb
 
 Project: Clinic Data Pipeline
+
+## Architecture Diagram
+
+The following diagram illustrates the end-to-end data pipeline architecture:
+
+```mermaid
+flowchart TD
+    A["Excel Clinic Schedule"] --> B["Data Ingestion - Pandas"]
+    B --> C["Data Quality Checks"]
+    C --> D["Data Profiling"]
+    D --> E["Data Transformation - Cleaning"]
+    E --> F["Cleaned Excel Export"]
+    F --> G["SQLite Database"]
+    G --> H["SQL Analysis"]
+    H --> I["Analysis Results"]
+
+    J["Automated Tests - Pytest"] -.-> E
+```
