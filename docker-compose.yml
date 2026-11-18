@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinic_data_pipeline
+    environment:
+      - APP_ENV=docker
+      - LOG_LEVEL=INFO
+    volumes:
+      # Mount data and logs so output files and SQLite DB persist on host machine
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: "no"

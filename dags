@@ -1,0 +1,25 @@
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.bash import BashOperator
+
+default_args = {
+    "owner": "data_engineer",
+    "depends_on_past": False,
+    "start_date": datetime(2026, 1, 1),
+    "email_on_failure": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
+}
+
+with DAG(
+    "clinic_data_pipeline",
+    default_args=default_args,
+    description="Daily ETL pipeline for outpatient clinic schedules",
+    schedule_interval="@daily",
+    catchup=False,
+) as dag:
+
+    run_pipeline = BashOperator(
+        task_id="run_clinic_etl",
+        bash_command="python /app/main.py",
+    )

@@ -1,19 +1,22 @@
 
 import sqlite3
 import pandas as pd
-from pathlib import Path
+
+from src.config import OUTPUT_FILE, DATABASE_FILE
 
 
 def load_data():
 
-    excel_file = Path(
-        "data/processed/OPD_Schedule_2026_Cleaned.xlsx"
-    )
+    # 1. Validate input file
+    if not OUTPUT_FILE.exists():
+        raise FileNotFoundError(
+            f"Cleaned Excel file not found: {OUTPUT_FILE}"
+        )
 
-    database_file = Path("data/clinic_data.db")
+    # 2. Read cleaned Excel
+    df = pd.read_excel(OUTPUT_FILE)
 
-    df = pd.read_excel(excel_file)
-
+    # 3. Correct Excel column names
     columns_mapping = {
         "العيادة (Clinic)": "clinic",
         "الطبيب (Doctor)": "doctor",
@@ -27,10 +30,22 @@ def load_data():
         "الجمعة Fri": "friday"
     }
 
+    # 4. Validate required columns
+    missing_columns = [
+        column for column in columns_mapping
+        if column not in df.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            f"Missing Excel columns: {missing_columns}"
+        )
+
     df = df.rename(columns=columns_mapping)
 
     database_columns = list(columns_mapping.values())
 
+    # 5. Prepare records
     records = []
 
     for row in df[database_columns].itertuples(
@@ -44,10 +59,17 @@ def load_data():
             )
         )
 
-    with sqlite3.connect(database_file) as connection:
+    # 6. Load into SQLite
+    DATABASE_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    with sqlite3.connect(DATABASE_FILE) as connection:
 
         cursor = connection.cursor()
 
+        # Full refresh
         cursor.execute("DELETE FROM clinic_schedules")
 
         cursor.executemany("""

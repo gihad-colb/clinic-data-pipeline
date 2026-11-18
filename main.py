@@ -1,7 +1,9 @@
 
-from pathlib import Path
-import pandas as pd
+import logging
 
+from src.config import INPUT_FILE, OUTPUT_FILE
+from src.logger import setup_logger
+from src.ingestion.excel_reader import read_excel_file
 from src.transformation.quality_checks import (
     check_data_quality,
     generate_data_profile
@@ -14,65 +16,63 @@ from src.database.run_queries import run_query
 
 def main():
 
-    print("\n========== CLINIC DATA PIPELINE ==========")
+    logger = setup_logger()
 
-    # 1. Data Ingestion
-    input_file = Path(
-        "data/raw/OPD_Schedule_2026_Formatted.xlsx"
-    )
+    logger.info("========== CLINIC DATA PIPELINE STARTED ==========")
 
-    df = pd.read_excel(
-        input_file,
-        sheet_name="دليل العيادات"
-    )
+    try:
+        # 1. Data Ingestion
+        logger.info("STEP 1: DATA INGESTION STARTED")
+        df, sheet_name = read_excel_file(INPUT_FILE)
+        logger.info("Data ingestion completed. Records: %s", len(df))
 
-    print("\n1. DATA INGESTION")
-    print("Records:", len(df))
+        # 2. Data Quality
+        logger.info("STEP 2: DATA QUALITY STARTED")
+        check_data_quality(df)
+        logger.info("Data quality completed")
 
-    # 2. Data Quality
-    print("\n2. DATA QUALITY")
-    check_data_quality(df)
+        # 3. Data Profiling
+        logger.info("STEP 3: DATA PROFILING STARTED")
+        generate_data_profile(df)
+        logger.info("Data profiling completed")
 
-    # 3. Data Profiling
-    print("\n3. DATA PROFILING")
-    generate_data_profile(df)
+        # 4. Data Transformation
+        logger.info("STEP 4: DATA TRANSFORMATION STARTED")
+        cleaned_df = clean_data(df)
+        logger.info("Data transformation completed")
 
-    # 4. Data Transformation
-    print("\n4. DATA TRANSFORMATION")
-    cleaned_df = clean_data(df)
+        # 5. Data Export
+        logger.info("STEP 5: DATA EXPORT STARTED")
+        OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    # 5. Data Export
-    output_file = Path(
-        "data/processed/OPD_Schedule_2026_Cleaned.xlsx"
-    )
+        cleaned_df.to_excel(
+            OUTPUT_FILE,
+            index=False,
+            sheet_name=sheet_name
+        )
 
-    output_file.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+        logger.info("Data exported successfully: %s", OUTPUT_FILE)
 
-    cleaned_df.to_excel(
-        output_file,
-        index=False,
-        sheet_name="دليل العيادات"
-    )
+        # 6. Database Creation
+        logger.info("STEP 6: DATABASE CREATION STARTED")
+        create_database()
+        logger.info("Database creation completed")
 
-    print("\n5. DATA EXPORT")
-    print("Saved:", output_file)
+        # 7. Database Loading
+        logger.info("STEP 7: DATABASE LOADING STARTED")
+        load_data()
+        logger.info("Database loading completed")
 
-    # 6. Database Creation
-    print("\n6. DATABASE CREATION")
-    create_database()
+        # 8. SQL Analysis
+        logger.info("STEP 8: SQL ANALYSIS STARTED")
+        run_query()
+        logger.info("SQL analysis completed")
 
-    # 7. Database Loading
-    print("\n7. DATABASE LOADING")
-    load_data()
+        logger.info("========== PIPELINE COMPLETED SUCCESSFULLY ==========")
 
-    # 8. SQL Analysis
-    print("\n8. SQL ANALYSIS")
-    run_query()
-
-    print("\n========== PIPELINE COMPLETED ==========")
+    except Exception:
+        logger.exception("PIPELINE FAILED")
+        raise
 
 
 if __name__ == "__main__":

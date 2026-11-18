@@ -1,41 +1,47 @@
 
 import sqlite3
-from pathlib import Path
+
+from src.config import DATABASE_FILE
 
 
 def create_database():
 
-    database_path = Path("data/clinic_data.db")
-    database_path.parent.mkdir(parents=True, exist_ok=True)
+    DATABASE_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
-    connection = sqlite3.connect(database_path)
+    connection = sqlite3.connect(DATABASE_FILE)
 
-    cursor = connection.cursor()
+    try:
+        cursor = connection.cursor()
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS clinic_schedules (
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS clinic_schedules (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            clinic TEXT,
-            doctor TEXT,
-            qualification TEXT,
+                clinic TEXT,
+                doctor TEXT,
+                qualification TEXT,
 
-            saturday TEXT,
-            sunday TEXT,
-            monday TEXT,
-            tuesday TEXT,
-            wednesday TEXT,
-            thursday TEXT,
-            friday TEXT
-        )
-    """)
+                saturday TEXT,
+                sunday TEXT,
+                monday TEXT,
+                tuesday TEXT,
+                wednesday TEXT,
+                thursday TEXT,
+                friday TEXT
+            )
+        """)
 
-    connection.commit()
-    connection.close()
+        connection.commit()
 
-    print("Database created successfully!")
-    print("Database path:", database_path)
+        print("Database created successfully!")
+        print("Database path:", DATABASE_FILE)
+
+    finally:
+        connection.close()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
 pandas
 openpyxl
 pytest
+python-dotenv>=1.0.0
